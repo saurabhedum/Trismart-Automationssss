@@ -1,3 +1,4 @@
+import React from 'react';
 import { motion, AnimatePresence } from "motion/react";
 import { AlertTriangle, X } from "lucide-react";
 

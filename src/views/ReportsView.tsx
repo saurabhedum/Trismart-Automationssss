@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Report, subscribeToReports, addReport, deleteReport, Customer, subscribeToCustomers, subscribeToSettings, AppSettings, ReportFile } from "../lib/db";

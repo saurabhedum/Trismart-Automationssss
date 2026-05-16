@@ -1,3 +1,4 @@
+import React from 'react';
 import { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageCircle, X, Settings, Database, Send, Loader2, Key } from 'lucide-react';

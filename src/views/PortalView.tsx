@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { getPortalData, PublicPortalData } from '../lib/portal';
 import { motion } from 'motion/react';

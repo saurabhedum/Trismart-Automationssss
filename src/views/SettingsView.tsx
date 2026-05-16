@@ -629,6 +629,46 @@ export function SettingsView() {
                       />
                       <p className="text-xs neu-text-muted ml-1 mt-1">Found in your Meta App Dashboard &gt; WhatsApp &gt; API Setup &gt; Phone number ID.</p>
                     </div>
+                    
+                    <div className="md:col-span-2 pt-4 mt-2 border-t border-[var(--shadow-dark)]">
+                      <h4 className="text-sm font-bold text-slate-800 mb-3 ml-1 flex items-center gap-2">
+                          <MessageCircle className="w-4 h-4 text-emerald-500" />
+                          Approved Template Names (Optional)
+                      </h4>
+                      <p className="text-xs neu-text-muted ml-1 mb-4">Meta requires pre-approved templates for Business Initiated messages outside the 24-hr window.</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold uppercase tracking-wider neu-text-muted ml-1">Billing Template Name</label>
+                          <input
+                            type="text"
+                            value={settings.billingTemplateName || ''}
+                            onChange={(e) => setSettings({ ...settings, billingTemplateName: e.target.value })}
+                            className="w-full px-4 py-2 border border-[var(--shadow-light)] rounded-xl bg-transparent outline-none text-sm font-medium"
+                            placeholder="monthly_bill_notification"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold uppercase tracking-wider neu-text-muted ml-1">Receipt Template Name</label>
+                          <input
+                            type="text"
+                            value={settings.receiptTemplateName || ''}
+                            onChange={(e) => setSettings({ ...settings, receiptTemplateName: e.target.value })}
+                            className="w-full px-4 py-2 border border-[var(--shadow-light)] rounded-xl bg-transparent outline-none text-sm font-medium"
+                            placeholder="payment_reminder"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold uppercase tracking-wider neu-text-muted ml-1">Broadcast Template Name</label>
+                          <input
+                            type="text"
+                            value={settings.broadcastTemplateName || ''}
+                            onChange={(e) => setSettings({ ...settings, broadcastTemplateName: e.target.value })}
+                            className="w-full px-4 py-2 border border-[var(--shadow-light)] rounded-xl bg-transparent outline-none text-sm font-medium"
+                            placeholder="general_announcement"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </>
                 ) : settings.preferredNotificationMethod ? (
                   <>

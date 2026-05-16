@@ -415,14 +415,11 @@ async function startServer() {
     const mobile = to.replace(/\D/g, '');
     let formattedTo = mobile;
     if (mobile.length === 10) {
-      formattedTo = `91${mobile}`;
-    } else if (mobile.length === 12 && mobile.startsWith('91')) {
-      formattedTo = mobile;
-    } else if (mobile.length === 13 && mobile.startsWith('0')) { // Sometimes people add 091 ?
+      formattedTo = `91${mobile}`; // fallback default to India if only 10 digits
+    } else if (mobile.length === 13 && mobile.startsWith('0')) {
        formattedTo = mobile.substring(mobile.length - 12);
     } else {
-       // fallback, if it's strangely formatted just prepend 91 and hope for the best if it doesn't have it
-       formattedTo = mobile.startsWith('91') ? mobile : `91${mobile}`;
+       formattedTo = mobile; // assume the user provided the country code for live numbers
     }
     
     console.log(`[WhatsApp] Sending to ${formattedTo}...`);
@@ -482,11 +479,11 @@ async function startServer() {
        let components: any[] = [];
        
        if (templateCategory === 'billing') {
-         templateName = 'monthly_bill_notification';
+         templateName = settings.billingTemplateName || 'monthly_bill_notification';
        } else if (templateCategory === 'receipt') {
-         templateName = 'payment_reminder'; // or a separate receipt template if defined
+         templateName = settings.receiptTemplateName || 'payment_reminder'; // or a separate receipt template if defined
        } else if (templateCategory === 'broadcast') {
-         templateName = 'general_announcement';
+         templateName = settings.broadcastTemplateName || 'general_announcement';
        }
 
        if (mediaId && templateCategory === 'billing') {
@@ -557,7 +554,13 @@ async function startServer() {
       console.error(`[WhatsApp] Meta API Error:`, data.error);
       let errMsg = data.error?.message || "Meta API Error";
       if (data.error?.type === 'OAuthException') {
-        errMsg = `OAuthException: ${data.error?.message || "Invalid or expired token"}. Please ensure you're using the Phone Number ID (not App ID), the token is valid, and 'whatsapp_business_messaging' permissions are granted.`;
+         if (errMsg.includes('132001') || errMsg.includes('Template name does not exist') || errMsg.includes('Template name')) {
+             errMsg = `Template Error: ${data.error?.message}. Note: Meta requires approved templates for Business Initiated messages outside 24h window. Ensure your template name is exactly correct and approved. For testing, 'hello_world' usually works, but it must be approved for the target language.`;
+         } else if (errMsg.includes('131047')) {
+             errMsg = `24-Hour Window Error: ${data.error?.message}. Note: Meta blocks free-form texts outside the 24-hr session. You must use an approved Template.`;
+         } else {
+             errMsg = `OAuthException: ${data.error?.message}. Please ensure you're using the Phone Number ID (not App ID), the token is valid, and 'whatsapp_business_messaging' permissions are granted.`;
+         }
       }
       throw new Error(errMsg);
     }
@@ -573,9 +576,11 @@ async function startServer() {
     const mobile = to.replace(/\D/g, '');
     let formattedTo = mobile;
     if (mobile.length === 10) {
-      formattedTo = `91${mobile}`;
+      formattedTo = `91${mobile}`; // fallback default to India if 10 digits
+    } else if (mobile.length === 13 && mobile.startsWith('0')) {
+       formattedTo = mobile.substring(mobile.length - 12);
     } else {
-      formattedTo = mobile.startsWith('91') ? mobile : `91${mobile}`;
+      formattedTo = mobile; // assume it contains correct country code
     }
 
     console.log(`[Cunnekt] Sending to ${formattedTo}...`);

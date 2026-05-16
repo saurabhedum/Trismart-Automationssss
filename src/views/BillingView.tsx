@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { FileText, Search, Play, Download, MessageCircle, Settings, X, Upload, CheckCircle2, AlertTriangle, Send, Camera, Paperclip } from "lucide-react";
