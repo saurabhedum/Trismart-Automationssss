@@ -21,10 +21,10 @@ export const generateInvoicePDF = (customer: Customer, settings: AppSettings) =>
   
   // Company Info (Mock)
   doc.setFontSize(12);
-  doc.text('Smart Society Management', 20, 45);
+  doc.text('Smart Water Management', 20, 45);
   doc.setFontSize(10);
   doc.text('Main Office, City Center', 20, 50);
-  doc.text('Email: support@society.app', 20, 55);
+  doc.text('Email: support@waterbilling.app', 20, 55);
   
   // Customer Info
   doc.setFontSize(12);
@@ -39,7 +39,7 @@ export const generateInvoicePDF = (customer: Customer, settings: AppSettings) =>
     startY: 75,
     head: [['Description', 'Cycle', 'Amount (INR)']],
     body: [
-      ['Maintenance Charges', `${settings.billingCycleMonths} Months`, settings.billingAmount.toFixed(2)],
+      ['Water Charges', `${settings.billingCycleMonths} Months`, settings.billingAmount.toFixed(2)],
       ['Previous Outstanding', '-', (customer.balance - settings.billingAmount).toFixed(2)],
       ['Total Payable', '-', customer.balance.toFixed(2)],
     ],
@@ -122,7 +122,14 @@ export const sendWhatsAppNotification = async (
       return { success: true };
     } else {
       console.error(`Automated WhatsApp API failed: ${result.error}.`);
-      // If bulk mode and no other options, we might fail here, but let's keep going for manual if not bulk
+      if (isBulkMode) {
+        return { success: false, error: result.error || "Automated API failed" };
+      }
+      // If not bulk mode, we might keep going for manual if we want, but let's actually just return the error if it was a real API error.
+      // Wait, if API is configured but failed due to quota, we might still want manual fallback, but it's better to show the error.
+      if (result.error && (result.error.includes("Insufficient quota") || result.error.includes("Invalid token") || result.error.includes("API"))) {
+         return { success: false, error: result.error };
+      }
     }
   }
 
@@ -201,7 +208,7 @@ export const runAutomationCycle = async (customers: Customer[], settings: AppSet
 
           // If smart notifications are enabled, automatically text them their new bill
           if (automation.smartNotifications && automation.bulkProcessing) {
-            const message = `Dear ${customer.name}, your maintenance bill for the new cycle has been generated. Your amount due is ${newBalance.toFixed(2)}. Please pay by the due date.`;
+            const message = `Dear ${customer.name}, your water bill for the new cycle has been generated. Your amount due is ${newBalance.toFixed(2)}. Please pay by the due date.`;
             const pdfBlob = generateInvoicePDF({ ...customer, balance: newBalance }, updatedSettings);
             sendWhatsAppNotification(customer, message, updatedSettings, pdfBlob, `Bill_${customer.id}.pdf`, true).catch(e => console.error("Auto billing notice error", e));
           }
@@ -360,10 +367,10 @@ export const generateEscalationPDF = (customer: Customer, settings: AppSettings)
   
   // Company Info
   doc.setFontSize(12);
-  doc.text('Smart Society Management', 20, 45);
+  doc.text('Smart Water Management', 20, 45);
   doc.setFontSize(10);
   doc.text('Main Office, City Center', 20, 50);
-  doc.text('Email: legal@society.app', 20, 55);
+  doc.text('Email: legal@waterbilling.app', 20, 55);
   
   // Customer Info
   doc.setFontSize(14);

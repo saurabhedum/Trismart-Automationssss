@@ -1,6 +1,6 @@
 {
-  "name": "Remix: Remix: Trismart ABS",
-  "description": "Trismart ABS (Automated Billing System) - A fully functional, ready to deploy end-to-end automated billing system.",
+  "name": "Remix: Remix: Trismart Water ABS",
+  "description": "Trismart Water ABS (Automated Billing System) - A fully functional, ready to deploy end-to-end automated water billing system.",
   "requestFramePermissions": [
     "camera"
   ]

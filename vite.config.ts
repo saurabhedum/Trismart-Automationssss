@@ -17,9 +17,9 @@ export default defineConfig(({mode}) => {
           maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
         },
         manifest: {
-          name: 'Trismart Automated Billing System',
-          short_name: 'Trismart ABS',
-          description: 'A powerful automated billing application',
+          name: 'Trismart Water Billing System',
+          short_name: 'Water ABS',
+          description: 'A powerful automated water billing application',
           theme_color: '#1a202c',
           background_color: '#1a202c',
           display: 'standalone',

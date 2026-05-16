@@ -24,6 +24,7 @@ export function BillingView() {
   const [settings, setSettings] = useState<AppSettings>({ 
     upiQrCodeImage: null,
     billingAmount: 200,
+    waterRatePerUnit: 15,
     billingCycleMonths: 2,
     penaltyAmount: 40,
     penaltyDays: 10
@@ -192,9 +193,9 @@ export function BillingView() {
     const status = getMockStatus(customer);
     let message = "";
     if (status === "Pending" || status === "Overdue") {
-      message = `Dear ${customer.name}, your maintenance bill for ${currentMonth} is currently due. Your outstanding balance is ₹${customer.balance}. Please make the payment at your earliest convenience to avoid any service interruption. Attached is your official invoice.`;
+      message = `Dear ${customer.name}, your water bill for ${currentMonth} is currently due. Your outstanding balance is ₹${customer.balance}. Please make the payment at your earliest convenience to avoid any service interruption. Attached is your official invoice.`;
     } else {
-      message = `Dear ${customer.name}, your maintenance bill for ${currentMonth} has been PAID. Thank you for your promptness! Attached is your official receipt.`;
+      message = `Dear ${customer.name}, your water bill for ${currentMonth} has been PAID. Thank you for your promptness! Attached is your official receipt.`;
     }
     
     // Generate PDF
@@ -390,7 +391,7 @@ export function BillingView() {
               isDestructive: false,
               showCancel: true,
               onConfirm: () => {
-                const genericMessage = `Important Notice:\n\nMaintenance bills have been generated for this cycle. Please check your app or portal.`;
+                const genericMessage = `Important Notice:\n\nWater bills have been generated for this cycle. Please check your app or portal.`;
                 const url = `https://wa.me/?text=${encodeURIComponent(genericMessage)}`;
                 window.open(url, '_blank');
                 setConfirmConfig({...confirmConfig, isOpen: false});
@@ -417,7 +418,7 @@ export function BillingView() {
     setConfirmConfig({
       isOpen: true,
       title: "Run Billing Cycle",
-      message: `Are you sure you want to generate bills of ${formatCurrency(settings.billingAmount)} for all active customers?`,
+      message: `Are you sure you want to generate bills (Fixed/Usage) for all active customers?`,
       isDestructive: false,
       showCancel: true,
       onConfirm: async () => {
@@ -505,11 +506,8 @@ export function BillingView() {
       isDestructive: false,
       showCancel: true,
       onConfirm: async () => {
-        // Calculate amount based on consumption (example: 10 per unit if consumption basis)
-        // Or just keep the flat billing but record the reading.
-        // For this demo, let's say we update balance by (consumption * unitRate)
-        const unitRate = settings.billingAmount / 10; // dummy logic
-        const newBalance = scanningForCustomer.balance + (consumption * 2); // adding just a small bit for demo
+        const unitRate = settings.waterRatePerUnit || 15;
+        const newBalance = scanningForCustomer.balance + (consumption * unitRate);
         
         await updateCustomer({
           ...scanningForCustomer,

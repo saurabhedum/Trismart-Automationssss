@@ -23,9 +23,9 @@ import { Download } from "lucide-react";
 
 export const layers = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, description: "Overview & Metrics" },
-  { id: "customers", label: "Units & Residents", icon: Users, description: "Manage Accounts" },
+  { id: "customers", label: "Connections", icon: Users, description: "Manage Accounts" },
   { id: "alerts", label: "Announcements", icon: BellRing, description: "Monitor & Remind" },
-  { id: "billing", label: "Maintenance Bills", icon: FileText, description: "Billing Cycles" },
+  { id: "billing", label: "Water Bills", icon: FileText, description: "Billing Cycles" },
   { id: "payments", label: "Payments", icon: CreditCard, description: "Transaction History" },
   { id: "complaints", label: "Complaints", icon: AlertTriangle, description: "Manage Complaints" },
   { id: "reports", label: "Reports", icon: FileText, description: "Manage Broadcasts" },
@@ -102,8 +102,8 @@ export function Sidebar({ activeLayer, setActiveLayer, theme, setTheme, uiStyle,
                 exit={{ opacity: 0, x: -20 }}
                 className="whitespace-nowrap"
               >
-                <h1 className="neu-text font-black text-lg leading-tight tracking-tighter group-hover:text-[var(--accent)] transition-colors">Smart Society</h1>
-                <p className="text-[10px] neu-accent uppercase tracking-widest font-black opacity-80">Maintenance Sys</p>
+                <h1 className="neu-text font-black text-lg leading-tight tracking-tighter group-hover:text-[var(--accent)] transition-colors">Smart Water</h1>
+                <p className="text-[10px] neu-accent uppercase tracking-widest font-black opacity-80">Billing System</p>
               </motion.div>
             )}
           </AnimatePresence>

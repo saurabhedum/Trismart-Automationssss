@@ -48,7 +48,7 @@ export function PortalView() {
         const { submitPaymentReceipt } = await import('../lib/portal');
         await submitPaymentReceipt(portalData!, base64Image);
         
-        addBotMessage("Thank you! Your payment screenshot has been uploaded and sent to the maintenance department for verification.");
+        addBotMessage("Thank you! Your payment screenshot has been uploaded and sent to the billing department for verification.");
       } catch (err) {
         addBotMessage("Failed to upload screenshot. Please try again.");
       } finally {
@@ -337,7 +337,7 @@ export function PortalView() {
                   }
                 }}
                 className="flex-1 bg-transparent border-none outline-none resize-none p-2.5 text-[14px] min-h-[44px] max-h-[120px] rounded-xl"
-                placeholder="Ask anything about maintenance bills... or tap icon for screenshot"
+                placeholder="Ask anything about water bills... or tap icon for screenshot"
                 rows={1}
               />
               <input

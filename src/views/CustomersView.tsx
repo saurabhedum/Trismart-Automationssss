@@ -66,6 +66,7 @@ const CustomerTableRow = React.memo(({
           </div>
         )}
       </td>
+      <td className="px-4 py-4 font-mono text-xs">{customer.lastMeterReading || '-'}</td>
       <td className="px-4 py-4 font-medium">{formatCurrency(customer.balance)}</td>
       <td className="px-4 py-4 text-right">
         <div className="flex justify-end items-center gap-1">
@@ -330,9 +331,9 @@ export function CustomersView() {
   const preloadedMessages = [
     "Maintenance work will be carried out tomorrow from 10 AM to 2 PM. Please expect some disruption.",
     "Emergency repair work is in progress. Services may be affected for the next few hours.",
-    "Elevator maintenance is scheduled for Sunday. Please use the stairs during this time.",
-    "Billing cycle has started. Please check your dashboard for the latest maintenance invoice.",
-    "Thank you for being a valued resident. We are committed to providing a great living experience."
+    "Water tank maintenance is scheduled for Sunday. Please store enough water during this time.",
+    "Billing cycle has started. Please check your dashboard for the latest water invoice.",
+    "Thank you for being a valued customer. We are committed to providing an uninterrupted water supply."
   ];
   
   const [confirmConfig, setConfirmConfig] = useState<{
@@ -522,17 +523,25 @@ export function CustomersView() {
       showAlert("Cannot Send", "This customer is suspended.");
       return;
     }
-    const message = `Your payment details for your maintenance bill have been confirmed. Thank you for your payment.`;
-    await sendWhatsAppNotification(customer, message, settings);
-    showAlert("Success", "Notification resent successfully.");
+    const message = `Your payment details for your water bill have been confirmed. Thank you for your payment.`;
+    const result = await sendWhatsAppNotification(customer, message, settings);
+    if (result.success) {
+      if (result.fellBackToManual) {
+        // Did not actually send via API, window was opened, but considered success for manual flow.
+      } else {
+        showAlert("Success", "Notification sent successfully via API.");
+      }
+    } else {
+      showAlert("Error", `Failed to send notification: ${result.error}`);
+    }
     setIsEditModalOpen(false);
   };
 
   const handleDeleteAll = () => {
     setConfirmConfig({
       isOpen: true,
-      title: "Delete All Units",
-      message: "Are you sure you want to delete ALL units? This will also delete their transaction history. This action cannot be undone.",
+      title: "Delete All Connections",
+      message: "Are you sure you want to delete ALL connections? This will also delete their transaction history. This action cannot be undone.",
       isDestructive: true,
       showCancel: true,
       onConfirm: async () => {
@@ -553,8 +562,8 @@ export function CustomersView() {
   const handleDeleteBatch = () => {
     setConfirmConfig({
       isOpen: true,
-      title: "Delete Selected Units",
-      message: `Are you sure you want to delete ${selectedIds.length} units? This action cannot be undone.`,
+      title: "Delete Selected Connections",
+      message: `Are you sure you want to delete ${selectedIds.length} connections? This action cannot be undone.`,
       isDestructive: true,
       showCancel: true,
       onConfirm: async () => {
@@ -854,8 +863,8 @@ export function CustomersView() {
     >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Units & Residents</h2>
-          <p className="neu-text-muted">Manage resident directories and balances</p>
+          <h2 className="text-2xl font-bold tracking-tight">Connections & Customers</h2>
+          <p className="neu-text-muted">Manage water connections, meter readings and balances</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {selectedIds.length > 0 && (
@@ -922,7 +931,7 @@ export function CustomersView() {
               onClick={() => setIsAddModalOpen(true)}
               className="w-full sm:w-auto flex justify-center items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-500/30"
             >
-              <Plus className="w-4 h-4" /> Add Unit
+              <Plus className="w-4 h-4" /> Add Connection
             </motion.button>
           </div>
         </div>
@@ -994,6 +1003,9 @@ export function CustomersView() {
                   <th className="px-4 py-3 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('status')}>
                     {t('Status')} <SortIcon column="status" />
                   </th>
+                  <th className="px-4 py-3 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('lastMeterReading')}>
+                    Meter Rgd <SortIcon column="lastMeterReading" />
+                  </th>
                   <th className="px-4 py-3 cursor-pointer hover:text-blue-600 transition-colors" onClick={() => handleSort('balance')}>
                     {t('Balance')} <SortIcon column="balance" />
                   </th>
@@ -1059,7 +1071,7 @@ export function CustomersView() {
               />
             ))}
             {filteredCustomers.length === 0 && (
-              <div className="py-8 text-center text-sm font-medium neu-text-muted">No units found.</div>
+              <div className="py-8 text-center text-sm font-medium neu-text-muted">No connections found.</div>
             )}
           </div>
             
@@ -1067,7 +1079,7 @@ export function CustomersView() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-4 py-4 border-t border-[var(--shadow-dark)]">
                 <span className="text-sm neu-text-muted">
-                  Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredCustomers.length)} of {filteredCustomers.length} units
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredCustomers.length)} of {filteredCustomers.length} connections
                 </span>
                 <div className="flex gap-2">
                   <button 

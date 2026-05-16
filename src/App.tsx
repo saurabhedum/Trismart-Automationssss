@@ -188,7 +188,7 @@ export default function App() {
               </div>
               <div>
                 <h2 className="text-2xl font-bold tracking-tight mb-2">Module Under Construction</h2>
-                <p className="text-sm neu-text-muted">This layer is currently being integrated into the society dashboard. Please check back later.</p>
+                <p className="text-sm neu-text-muted">This layer is currently being integrated into the water dashboard. Please check back later.</p>
               </div>
             </div>
           </motion.div>
@@ -227,8 +227,8 @@ export default function App() {
             TS
           </div>
           <div>
-            <h1 className="text-3xl font-black bg-gradient-to-br from-indigo-500 to-purple-600 bg-clip-text text-transparent">Smart Society</h1>
-            <p className="neu-text-muted mt-2 font-bold uppercase tracking-widest text-xs">Housing Maintenance System</p>
+            <h1 className="text-3xl font-black bg-gradient-to-br from-indigo-500 to-purple-600 bg-clip-text text-transparent">Smart Water</h1>
+            <p className="neu-text-muted mt-2 font-bold uppercase tracking-widest text-xs">Water Billing System</p>
             <p className="text-xs text-blue-600 font-medium mt-4 px-4 py-2 bg-blue-50 rounded-lg inline-block">
               Registration is open! Create your own private workspace.
             </p>

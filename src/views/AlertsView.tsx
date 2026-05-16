@@ -58,6 +58,8 @@ export function AlertsView() {
   }, []);
 
   const [viewMode, setViewMode] = useState<'all' | 'paid' | 'paid_notified' | 'unpaid'>('all');
+  const [manualQueue, setManualQueue] = useState<{customer: Customer, message: string, url: string}[] | null>(null);
+  const [manualQueueIndex, setManualQueueIndex] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
@@ -94,7 +96,7 @@ export function AlertsView() {
     } else {
       const penaltyAmount = customer.balance >= settings.billingAmount ? settings.penaltyAmount : 0;
       const totalAmount = customer.balance + penaltyAmount;
-      message = `Dear ${customer.name}, your maintenance bill of ${formatCurrency(totalAmount)} is pending (including late fees if applicable). Please pay immediately to avoid service disconnection.`;
+      message = `Dear ${customer.name}, your water bill of ${formatCurrency(totalAmount)} is pending (including late fees if applicable). Please pay immediately to avoid service disconnection.`;
     }
 
     if (customAttachment) {
@@ -150,12 +152,34 @@ export function AlertsView() {
         </div>
       ),
       onConfirm: async () => {
+        const isApiMode = deliveryModeRef.current === "api";
+
+        if (!isApiMode) {
+          const queue = targets.map((customer) => {
+             const message = `Dear ${customer.name}, thank you for your payment! Your account is now clear. We appreciate your promptness.`;
+             const mobile = customer.mobileNumber.replace(/\D/g, '');
+             let formattedTo = mobile;
+             if (mobile.length === 10) {
+               formattedTo = `91${mobile}`;
+             } else if (mobile.length === 12 && mobile.startsWith('91')) {
+               formattedTo = mobile;
+             } else {
+               formattedTo = mobile.startsWith('91') ? mobile : `91${mobile}`;
+             }
+             const url = `https://wa.me/${formattedTo}?text=${encodeURIComponent(message)}`;
+             return { customer, message, url, status: 'pending' as const };
+          });
+          setConfirmConfig({...confirmConfig, isOpen: false});
+          setManualQueue(queue);
+          setManualQueueIndex(0);
+          return;
+        }
+
         setIsSendingBulk(true);
         setBulkProgress(0);
         
         let errors = [];
-        const isApiMode = deliveryModeRef.current === "api";
-        const tempSettings = { ...settings, metaWhatsAppApiKey: isApiMode ? settings.metaWhatsAppApiKey : "" };
+        const tempSettings = { ...settings };
 
         const batch = writeBatch(db);
         let updatesSkipped = 0;
@@ -171,7 +195,7 @@ export function AlertsView() {
             fileName = customAttachment.name;
           }
 
-          const result = await sendWhatsAppNotification(customer, message, tempSettings, attachment, fileName, isApiMode);
+          const result = await sendWhatsAppNotification(customer, message, tempSettings, attachment, fileName, true);
           if (result.success) {
              batch.update(doc(db, 'customers', customer.id), { paymentNotified: true });
              updatesSkipped++;
@@ -191,7 +215,7 @@ export function AlertsView() {
           }
           
           setBulkProgress(Math.floor(((i + 1) / targets.length) * 100));
-          await new Promise(resolve => setTimeout(resolve, isApiMode ? 1000 : 3500));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
         if (updatesSkipped % 100 !== 0) {
@@ -204,23 +228,28 @@ export function AlertsView() {
         
         setIsSendingBulk(false);
         if (errors.length > 0) {
-          if (isApiMode) {
-            setConfirmConfig({
-              isOpen: true,
-              title: "API Delivery Failed",
-              message: `Some customers couldn't be notified via API:\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? '\n...' : ''}\n\nWould you like to use the manual fallback to select and message them in WhatsApp?`,
-              isDestructive: false,
-              showCancel: true,
-              onConfirm: () => {
-                const genericMessage = `Important Notice:\n\nYour maintenance bill payment has been processed. Thank you!`;
-                const url = `https://wa.me/?text=${encodeURIComponent(genericMessage)}`;
-                window.open(url, '_blank');
-                setConfirmConfig({...confirmConfig, isOpen: false});
-              }
-            });
-          } else {
-            showAlert('Notice', `Completed with some errors:\n\n${errors.join('\n')}\n\nNote: Make sure recipients are in your Meta Developer allowed list if using a test number.`);
-          }
+          setConfirmConfig({
+            isOpen: true,
+            title: "API Delivery Failed",
+            message: `Some customers couldn't be notified via API:\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? '\n...' : ''}\n\nWould you like to use the manual fallback to select and message them in WhatsApp?`,
+            isDestructive: false,
+            showCancel: true,
+            onConfirm: () => {
+              const queue = targets.map((customer) => {
+                 const message = `Dear ${customer.name}, thank you for your payment! Your account is now clear. We appreciate your promptness.`;
+                 const mobile = customer.mobileNumber.replace(/\D/g, '');
+                 let formattedTo = mobile;
+                 if (mobile.length === 10) formattedTo = `91${mobile}`;
+                 else if (mobile.length === 12 && mobile.startsWith('91')) formattedTo = mobile;
+                 else formattedTo = mobile.startsWith('91') ? mobile : `91${mobile}`;
+                 const url = `https://wa.me/${formattedTo}?text=${encodeURIComponent(message)}`;
+                 return { customer, message, url, status: 'pending' as const };
+              });
+              setConfirmConfig({...confirmConfig, isOpen: false});
+              setManualQueue(queue);
+              setManualQueueIndex(0);
+            }
+          });
         } else {
            showAlert('Notice', "All valid paid customers have been notified!");
         }
@@ -255,18 +284,38 @@ export function AlertsView() {
         </div>
       ),
       onConfirm: async () => {
+        const isApiMode = deliveryModeRef.current === "api";
+
+        if (!isApiMode) {
+          const queue = targets.map((customer) => {
+             const penaltyAmount = customer.balance >= settings.billingAmount ? settings.penaltyAmount : 0;
+             const totalAmount = customer.balance + penaltyAmount;
+             const message = `Dear ${customer.name}, your water bill of ${formatCurrency(totalAmount)} is pending. Please pay immediately to avoid service disconnection.`;
+             const mobile = customer.mobileNumber.replace(/\D/g, '');
+             let formattedTo = mobile;
+             if (mobile.length === 10) formattedTo = `91${mobile}`;
+             else if (mobile.length === 12 && mobile.startsWith('91')) formattedTo = mobile;
+             else formattedTo = mobile.startsWith('91') ? mobile : `91${mobile}`;
+             const url = `https://wa.me/${formattedTo}?text=${encodeURIComponent(message)}`;
+             return { customer, message, url, status: 'pending' as const };
+          });
+          setConfirmConfig({...confirmConfig, isOpen: false});
+          setManualQueue(queue);
+          setManualQueueIndex(0);
+          return;
+        }
+
         setIsSendingBulk(true);
         setBulkProgress(0);
         
         let errors = [];
-        const isApiMode = deliveryModeRef.current === "api";
-        const tempSettings = { ...settings, metaWhatsAppApiKey: isApiMode ? settings.metaWhatsAppApiKey : "" };
+        const tempSettings = { ...settings };
 
         for (let i = 0; i < targets.length; i++) {
           const customer = targets[i];
           const penaltyAmount = customer.balance >= settings.billingAmount ? settings.penaltyAmount : 0;
           const totalAmount = customer.balance + penaltyAmount;
-          let message = `Dear ${customer.name}, your maintenance bill of ${formatCurrency(totalAmount)} is pending. Please pay immediately to avoid service disconnection.`;
+          let message = `Dear ${customer.name}, your water bill of ${formatCurrency(totalAmount)} is pending. Please pay immediately to avoid service disconnection.`;
           
           let attachment: Blob | undefined = undefined;
           let fileName: string | undefined = undefined;
@@ -283,7 +332,7 @@ export function AlertsView() {
             }
           }
 
-          const result = await sendWhatsAppNotification(customer, message, tempSettings, attachment, fileName, isApiMode);
+          const result = await sendWhatsAppNotification(customer, message, tempSettings, attachment, fileName, true);
           if (!result.success) {
              errors.push(`${customer.name}: ${result.error}`);
           }
@@ -291,28 +340,35 @@ export function AlertsView() {
           setBulkProgress(Math.floor(((i + 1) / targets.length) * 100));
           
           // Small delay to prevent rate limits
-          await new Promise(resolve => setTimeout(resolve, isApiMode ? 1000 : 3500));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
         setIsSendingBulk(false);
         if (errors.length > 0) {
-          if (isApiMode) {
-            setConfirmConfig({
-              isOpen: true,
-              title: "API Delivery Failed",
-              message: `Some customers couldn't be notified via API:\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? '\n...' : ''}\n\nWould you like to use the manual fallback to select and message them in WhatsApp?`,
-              isDestructive: false,
-              showCancel: true,
-              onConfirm: () => {
-                const genericMessage = `Important Notice:\n\nYou have an outstanding balance on your maintenance bill. Please check your app or portal.`;
-                const url = `https://wa.me/?text=${encodeURIComponent(genericMessage)}`;
-                window.open(url, '_blank');
-                setConfirmConfig({...confirmConfig, isOpen: false});
-              }
-            });
-          } else {
-            showAlert('Notice', `Completed with some errors:\n\n${errors.join('\n')}\n\nNote: If using a Meta test number, recipients must be in your allowed list.`);
-          }
+          setConfirmConfig({
+            isOpen: true,
+            title: "API Delivery Failed",
+            message: `Some customers couldn't be notified via API:\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? '\n...' : ''}\n\nWould you like to use the manual fallback to select and message them in WhatsApp?`,
+            isDestructive: false,
+            showCancel: true,
+            onConfirm: () => {
+              const queue = targets.map((customer) => {
+                 const penaltyAmount = customer.balance >= settings.billingAmount ? settings.penaltyAmount : 0;
+                 const totalAmount = customer.balance + penaltyAmount;
+                 const message = `Dear ${customer.name}, your water bill of ${formatCurrency(totalAmount)} is pending. Please pay immediately to avoid service disconnection.`;
+                 const mobile = customer.mobileNumber.replace(/\D/g, '');
+                 let formattedTo = mobile;
+                 if (mobile.length === 10) formattedTo = `91${mobile}`;
+                 else if (mobile.length === 12 && mobile.startsWith('91')) formattedTo = mobile;
+                 else formattedTo = mobile.startsWith('91') ? mobile : `91${mobile}`;
+                 const url = `https://wa.me/${formattedTo}?text=${encodeURIComponent(message)}`;
+                 return { customer, message, url, status: 'pending' as const };
+              });
+              setConfirmConfig({...confirmConfig, isOpen: false});
+              setManualQueue(queue);
+              setManualQueueIndex(0);
+            }
+          });
         } else {
            showAlert('Notice', "All valid unpaid customers have been notified!");
         }
@@ -604,6 +660,79 @@ export function AlertsView() {
       >
         {confirmConfig.children}
       </ConfirmModal>
+
+      {/* Manual Queue Modal */}
+      {manualQueue && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="neu-flat rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative max-h-[90vh] flex flex-col"
+          >
+            <h2 className="text-2xl font-bold mb-2">Manual Delivery Queue</h2>
+            <p className="text-sm neu-text-muted mb-4">
+              Sending {manualQueueIndex + 1} of {manualQueue.length}
+            </p>
+            
+            <div className="w-full bg-slate-200 rounded-full h-2.5 mb-6 overflow-hidden">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+                style={{ width: `${(manualQueueIndex / manualQueue.length) * 100}%` }}
+              ></div>
+            </div>
+
+            <div className="flex-1 overflow-auto rounded-xl border border-[var(--shadow-dark)] p-4 mb-6 bg-black/5">
+              {manualQueueIndex < manualQueue.length ? (
+                <>
+                  <p className="font-bold text-lg mb-1">{manualQueue[manualQueueIndex].customer.name}</p>
+                  <p className="text-xs text-blue-600 font-mono mb-4">{manualQueue[manualQueueIndex].customer.mobileNumber}</p>
+                  <p className="text-sm whitespace-pre-wrap neu-text-muted">{manualQueue[manualQueueIndex].message}</p>
+                </>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
+                    <CheckCircle className="w-8 h-8" />
+                  </div>
+                  <p className="font-bold text-lg">All caught up!</p>
+                  <p className="text-sm neu-text-muted">You have processed the entire manual queue.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-auto">
+              <button
+                onClick={() => setManualQueue(null)}
+                className="flex-1 px-4 py-3 neu-flat rounded-xl font-bold"
+              >
+                {manualQueueIndex < manualQueue.length ? 'Cancel Queue' : 'Close'}
+              </button>
+              {manualQueueIndex < manualQueue.length && (
+                <button
+                  onClick={() => {
+                     // Mark current as done
+                     const newQueue = [...manualQueue];
+                     newQueue[manualQueueIndex].status = 'done';
+                     setManualQueue(newQueue);
+                     
+                     // If it's a paid customer, update paymentNotified
+                     if (viewMode === 'paid' || viewMode === 'all') {
+                        if (manualQueue[manualQueueIndex].message.includes("thank you for your payment")) {
+                           updateCustomer({ ...manualQueue[manualQueueIndex].customer, paymentNotified: true }).catch(console.error);
+                        }
+                     }
+
+                     window.open(manualQueue[manualQueueIndex].url, '_blank');
+                     setManualQueueIndex(i => i + 1);
+                  }}
+                  className="flex-1 px-4 py-3 bg-[#25D366] text-white hover:bg-[#1ebd5a] rounded-xl font-bold shadow-lg shadow-[#25D366]/30 transition-colors flex justify-center items-center gap-2"
+                >
+                  <Send className="w-4 h-4" /> Send Now
+                </button>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }

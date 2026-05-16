@@ -167,7 +167,7 @@ export function PaymentsView() {
       // Automatically send invoice or receipt if enabled
       if (settings.automation?.smartNotifications) {
         if (updatedCustomer.balance === 0) {
-          const message = `Dear ${updatedCustomer.name}, your maintenance bill has been fully PAID. Thank you for your promptness! Attached is your official invoice.`;
+          const message = `Dear ${updatedCustomer.name}, your water bill has been fully PAID. Thank you for your promptness! Attached is your official invoice.`;
           const pdfBlob = generateInvoicePDF(updatedCustomer, settings);
           await updateCustomer({ ...updatedCustomer, invoiceSent: true, paymentNotified: true });
           sendWhatsAppNotification(updatedCustomer, message, settings, pdfBlob, `Invoice_${updatedCustomer.id}.pdf`).catch(err => console.error("Auto notify error:", err));
@@ -179,9 +179,13 @@ export function PaymentsView() {
       } else if (updatedCustomer.balance === 0) {
         await updateCustomer({ ...updatedCustomer, invoiceSent: true, paymentNotified: false });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Payment confirmation error:", error);
-      showAlert("Error", "Failed to confirm payment. Please check your connection and try again.");
+      let errorMsg = "Failed to confirm payment. Please check your connection and try again.";
+      if (error.message?.includes('Quota') || error.code === 'resource-exhausted') {
+         errorMsg = "Database Quota Exceeded. You have hit the Firebase free tier limit.";
+      }
+      showAlert("Error", errorMsg);
     } finally {
       setIsConfirming(false);
     }
@@ -246,9 +250,13 @@ export function PaymentsView() {
       setBulkTransactionId("");
       setIsBulkConfirmModalOpen(false);
       showAlert("Bulk Success", `Bulk payment confirmed for ${customersToUpdate.length} customers!`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Bulk payment error:", error);
-      showAlert("Partial Failure", "Failed to process bulk payments. Some records may not have updated.");
+      let errorMsg = "Failed to process bulk payments. Some records may not have updated.";
+      if (error.message?.includes('Quota') || error.code === 'resource-exhausted') {
+         errorMsg = "Database Quota Exceeded. You have hit the Firebase free tier limit.";
+      }
+      showAlert("Partial Failure", errorMsg);
     } finally {
       setIsConfirming(false);
     }

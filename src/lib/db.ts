@@ -190,6 +190,7 @@ export interface ChatbotCommand {
 export interface AppSettings {
   upiQrCodeImage: string | null;
   billingAmount: number;
+  waterRatePerUnit?: number;
   billingCycleMonths: number;
   penaltyAmount: number;
   penaltyDays: number;
@@ -647,6 +648,7 @@ export const subscribeToSettings = (callback: (settings: AppSettings | null) => 
       callback({
         upiQrCodeImage: null,
         billingAmount: 200,
+        waterRatePerUnit: 15,
         billingCycleMonths: 2,
         penaltyAmount: 40,
         penaltyDays: 10,

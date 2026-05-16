@@ -16,6 +16,7 @@ export function SettingsView() {
   const [settings, setSettings] = useState<AppSettings>({
     upiQrCodeImage: null,
     billingAmount: 200,
+    waterRatePerUnit: 15,
     billingCycleMonths: 2,
     penaltyAmount: 40,
     penaltyDays: 10,
@@ -521,7 +522,7 @@ export function SettingsView() {
                   onChange={(e) => setBroadcastMessage(e.target.value)}
                   rows={6}
                   className="w-full px-4 py-3 neu-pressed rounded-xl bg-transparent outline-none text-sm font-medium resize-none"
-                  placeholder="Type your message here... (e.g. Due to elevator maintenance, service will be restricted tomorrow for 2 hours.)"
+                  placeholder="Type your message here... (e.g. Due to water network maintenance, service will be restricted tomorrow for 2 hours.)"
                 />
               </div>
 
@@ -911,17 +912,32 @@ export function SettingsView() {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-bold uppercase tracking-wider neu-text-muted ml-1">
-                Bill Amount (INR)
-              </label>
-              <input
-                type="number"
-                value={settings.billingAmount}
-                onChange={(e) => setSettings({ ...settings, billingAmount: Number(e.target.value) })}
-                className="w-full px-4 py-3 neu-pressed rounded-xl bg-transparent outline-none text-lg font-bold"
-              />
-              <p className="text-xs neu-text-muted ml-1">Amount charged per billing cycle.</p>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold uppercase tracking-wider neu-text-muted ml-1">
+                  Fixed Support Charge (INR)
+                </label>
+                <input
+                  type="number"
+                  value={settings.billingAmount}
+                  onChange={(e) => setSettings({ ...settings, billingAmount: Number(e.target.value) })}
+                  className="w-full px-4 py-3 neu-pressed rounded-xl bg-transparent outline-none text-lg font-bold"
+                />
+                <p className="text-xs neu-text-muted ml-1">Fixed maintenance charge billed per cycle.</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold uppercase tracking-wider neu-text-muted ml-1">
+                  Water Rate Per Unit (INR)
+                </label>
+                <input
+                  type="number"
+                  value={settings.waterRatePerUnit || 0}
+                  onChange={(e) => setSettings({ ...settings, waterRatePerUnit: Number(e.target.value) })}
+                  className="w-full px-4 py-3 neu-pressed rounded-xl bg-transparent outline-none text-lg font-bold"
+                />
+                <p className="text-xs neu-text-muted ml-1">Applied automatically when a new meter reading is synced or updated via scanner.</p>
+              </div>
             </div>
 
             <div className="space-y-2">

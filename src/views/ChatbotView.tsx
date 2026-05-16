@@ -24,7 +24,7 @@ export function ChatbotView() {
         { id: "sysbalance", buttonLabel: "💳 View Balance", triggerWord: "system_balance", response: "Your total remaining balance is Rs. {{balance}}.", isActive: true },
         { id: "syscomplaint", buttonLabel: "🛠️ Register Complaint", triggerWord: "system_complaint", response: "Please reply with your complaint directly by starting with \"COMPLAINT:\".", isActive: true },
         { id: "sysreport", buttonLabel: "📊 Deep Detail Report", triggerWord: "system_report", response: "Let me find your deep detail report.", isActive: true },
-        { id: "syswater", buttonLabel: "🛠️ Maintenance Status", triggerWord: "system_maintenance_status", response: "All society maintenance tasks are scheduled and running smoothly. The premises are secure.", isActive: true },
+        { id: "syswater", buttonLabel: "🛠️ Maintenance Status", triggerWord: "system_maintenance_status", response: "All water network maintenance tasks are scheduled and running smoothly. The water supply is continuous.", isActive: true },
         { id: "syssupply", buttonLabel: "🕒 Supply Timings", triggerWord: "system_supply_time", response: "Water supply timings are: Morning 6:00 AM - 8:00 AM, Evening 6:00 PM - 8:00 PM.", isActive: true },
         { id: "syscontact", buttonLabel: "📞 Contact Us", triggerWord: "system_contact", response: "You can contact the Panchayat office at 1800-123-4567.", isActive: true },
         { id: "sysnotify", buttonLabel: "🔔 Notify History", triggerWord: "system_notify", response: "Your recent notifications are available in the portal dashboard.", isActive: true },
