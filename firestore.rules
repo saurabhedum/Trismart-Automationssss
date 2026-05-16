@@ -1,0 +1,171 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: customers
+    // Fields:
+    //   - id: string (required)
+    //   - name: string (required)
+    //   - mobileNumber: string (required)
+    //   - status: string (Active/Suspended)
+    //   - balance: number
+    //   - ownerId: string (required, UID of the creator)
+    //
+    // Collection: transactions
+    // Fields:
+    //   - id: string (required)
+    //   - customerId: string (required, reference to customer)
+    //   - amount: number
+    //   - transactionId: string
+    //   - date: string (ISO 8601)
+    //   - ownerId: string (required, UID of the creator)
+    //
+    // Collection: settings
+    // Document ID: User UID
+    // Fields:
+    //   - upiQrCodeImage: string (optional)
+    //   - billingAmount: number
+    //   - billingCycleMonths: number
+    //   - penaltyAmount: number
+    //   - penaltyDays: number
+    //   - ownerId: string (required, UID of the creator)
+    //
+    // Collection: uploadedData
+    // Fields:
+    //   - id: string (required)
+    //   - fileName: string
+    //   - data: string (JSON)
+    //   - uploadedAt: string (ISO 8601)
+    //   - ownerId: string (required, UID of the creator)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        ('email' in request.auth.token) &&
+        ('email_verified' in request.auth.token) &&
+        (request.auth.token.email == "ksmotalkar@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    function isBot() {
+      return isAuthenticated() && 
+        ('email' in request.auth.token) &&
+        ('email_verified' in request.auth.token) &&
+        (request.auth.token.email == "bot@smartbilling.app") &&
+        (request.auth.token.email_verified == true);
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && (
+        isAdmin() || 
+        isBot() ||
+        resource.data.ownerId == request.auth.uid
+      );
+    }
+
+    function ownerUnchanged() {
+      return !('ownerId' in request.resource.data) || request.resource.data.ownerId == resource.data.ownerId;
+    }
+
+    match /customers/{customerId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isAdmin());
+      allow update: if isDocOwner() && ownerUnchanged();
+      allow delete: if isDocOwner();
+
+      match /chat_history/{chatId} {
+        allow read, write: if true;
+      }
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isAdmin());
+      allow update: if isDocOwner() && ownerUnchanged();
+      allow delete: if isDocOwner();
+    }
+
+    // ... settings and others
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated() && (settingId == request.auth.uid || isAdmin() || isBot());
+      allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isAdmin()) && (settingId == request.auth.uid || isAdmin());
+      allow update: if isAuthenticated() && (settingId == request.auth.uid || isAdmin()); // Removed ownerUnchanged because user can add verification keys
+      allow delete: if isAuthenticated() && (settingId == request.auth.uid || isAdmin());
+    }
+
+    match /uploadedData/{uploadId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isAdmin());
+      allow update: if isDocOwner() && ownerUnchanged();
+      allow delete: if isDocOwner();
+    }
+
+    match /public_portals/{portalId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isAdmin());
+      allow update: if isDocOwner() && ownerUnchanged();
+      allow delete: if isDocOwner();
+    }
+
+    match /payment_receipts/{receiptId} {
+      allow read: if isDocOwner(); // Only admin can read their receipts
+      allow create: if true; // Public customers can upload
+      allow update: if isDocOwner() && ownerUnchanged();
+      allow delete: if isDocOwner();
+    }
+
+    match /complaints/{complaintId} {
+      allow read: if isDocOwner();
+      allow create: if true; // Public or authenticated users can register complaints (also server webhook)
+      allow update: if isDocOwner() && ownerUnchanged();
+      allow delete: if isDocOwner();
+    }
+
+    match /reports/{reportId} {
+      allow read: if true; // Shared reports are public via portal
+      allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isAdmin());
+      allow update: if isDocOwner() && ownerUnchanged();
+      allow delete: if isDocOwner();
+    }
+
+    match /reportFolders/{folderId} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && (request.resource.data.ownerId == request.auth.uid || isAdmin());
+      allow update: if isDocOwner() && ownerUnchanged();
+      allow delete: if isDocOwner();
+    }
+
+    match /whatsapp_messages/{messageId} {
+      allow read: if isDocOwner();
+      allow create: if true; // Webhook needs to create
+      allow update: if isDocOwner() && ownerUnchanged();
+      allow delete: if isDocOwner();
+    }
+
+    match /chatbotSettings/{settingId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && (settingId == request.auth.uid || isAdmin());
+      allow update: if isAuthenticated() && (settingId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (settingId == request.auth.uid || isAdmin());
+    }
+
+    match /test/{documentId} {
+      allow read: if true;
+    }
+
+    match /providers/{providerId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}
